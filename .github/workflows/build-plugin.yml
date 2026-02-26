@@ -9,49 +9,58 @@ on:
   pull_request:
 
 jobs:
-  build-macos:
-    name: Build macOS (AU, VST3, Standalone)
-    runs-on: macos-14
+  build:
+    name: Build ${{ matrix.target.name }}
+    runs-on: ${{ matrix.target.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: macOS (AU, VST3, Standalone)
+            os: macos-14
+            build_dir: plugin/build-ci-mac
+            cmake_generator: Xcode
+            artifact_name: TurboTuning-macOS
+          - name: Windows (VST3, Standalone)
+            os: windows-2022
+            build_dir: plugin/build-ci-win
+            cmake_generator: Visual Studio 17 2022
+            artifact_name: TurboTuning-Windows
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure (CMake + Xcode)
-        run: cmake -S plugin -B plugin/build-ci-mac -G Xcode
+      - name: Configure (macOS)
+        if: runner.os == 'macOS'
+        run: cmake -S plugin -B ${{ matrix.target.build_dir }} -G "${{ matrix.target.cmake_generator }}"
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: cmake -S plugin -B ${{ matrix.target.build_dir }} -G "${{ matrix.target.cmake_generator }}" -A x64
 
       - name: Build Release
-        run: cmake --build plugin/build-ci-mac --config Release --parallel
+        run: cmake --build ${{ matrix.target.build_dir }} --config Release --parallel
 
-      - name: Upload macOS artifacts
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent "${{ matrix.target.build_dir }}/TurboTuning_artefacts/Release/AU" dist/TurboTuning-macOS-AU.zip
+          ditto -c -k --sequesterRsrc --keepParent "${{ matrix.target.build_dir }}/TurboTuning_artefacts/Release/VST3" dist/TurboTuning-macOS-VST3.zip
+          ditto -c -k --sequesterRsrc --keepParent "${{ matrix.target.build_dir }}/TurboTuning_artefacts/Release/Standalone" dist/TurboTuning-macOS-Standalone.zip
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path "${{ matrix.target.build_dir }}/TurboTuning_artefacts/Release/VST3/*" -DestinationPath "dist/TurboTuning-Windows-VST3.zip" -Force
+          Compress-Archive -Path "${{ matrix.target.build_dir }}/TurboTuning_artefacts/Release/Standalone/*" -DestinationPath "dist/TurboTuning-Windows-Standalone.zip" -Force
+
+      - name: Upload packaged artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: TurboTuning-macOS
+          name: ${{ matrix.target.artifact_name }}
           if-no-files-found: error
-          path: |
-            plugin/build-ci-mac/TurboTuning_artefacts/Release/AU/*.component
-            plugin/build-ci-mac/TurboTuning_artefacts/Release/VST3/*.vst3
-            plugin/build-ci-mac/TurboTuning_artefacts/Release/Standalone/*.app
-
-  build-windows:
-    name: Build Windows (VST3, Standalone)
-    runs-on: windows-2022
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure (CMake + VS2022)
-        run: cmake -S plugin -B plugin/build-ci-win -G "Visual Studio 17 2022" -A x64
-
-      - name: Build Release
-        run: cmake --build plugin/build-ci-win --config Release --parallel
-
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: TurboTuning-Windows
-          if-no-files-found: error
-          path: |
-            plugin/build-ci-win/TurboTuning_artefacts/Release/VST3/*.vst3
-            plugin/build-ci-win/TurboTuning_artefacts/Release/Standalone/*.exe
+          path: dist/*.zip

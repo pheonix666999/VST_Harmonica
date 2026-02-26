@@ -1,0 +1,64 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
+# Archives / packaged outputs
+*.zip
+*.7z
+*.tar
+*.gz
+
+# CMake build system outputs
+**/CMakeCache.txt
+**/CMakeFiles/
+**/cmake_install.cmake
+**/compile_commands.json
+**/Testing/
+
+# Generic build/output directories
+build/
+build-*/
+**/build/
+**/build-*/
+**/*_artefacts/
+
+# JUCE fetched dependencies/cache from local builds
+**/_deps/
+
+# Plugin binaries and debug symbols
+*.vst3
+*.component
+*.aaxplugin
+*.app
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.exp
+*.pdb
+*.ilk
+
+# Visual Studio
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.opensdf
+*.sdf
+*.suo
+*.user
+*.tlog
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+
+# GitHub Actions local artifacts/cache
+.github/artifacts/
