@@ -1,0 +1,40 @@
+{
+  "name": "Turbo Harp",
+  "short_name": "Turbo Harp",
+  "description": "Make music easily – your pocket GarageBand",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d0d1a",
+  "theme_color": "#6c63ff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "entertainment", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Beat Pads",
+      "short_name": "Pads",
+      "url": "./index.html#pads",
+      "icons": [{"src": "logo.png", "sizes": "96x96"}]
+    },
+    {
+      "name": "Harp Keys",
+      "short_name": "Keys",
+      "url": "./index.html#keys",
+      "icons": [{"src": "logo.png", "sizes": "96x96"}]
+    }
+  ]
+}

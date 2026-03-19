@@ -4,78 +4,74 @@ namespace TurboTuning
 {
 
 TurboTuningEditor::TurboTuningEditor (TurboTuningProcessor& p)
-    : AudioProcessorEditor (&p),
+    : juce::AudioProcessorEditor (&p),
       processor (p),
       effectsPanel (p.getAPVTS())
 {
-    setLookAndFeel (&turboLnF);
-    setSize (900, 660);
+    setLookAndFeel (&lookAndFeel);
+    setOpaque (true);
+    setSize (1120, 760);
+    logoImage = loadLogo();
 
-    // ── Header ──
-    titleLabel.setText ("TURBO TUNING", juce::dontSendNotification);
-    titleLabel.setFont (juce::Font (22.0f, juce::Font::bold));
+    titleLabel.setText ("TURBO HARP", juce::dontSendNotification);
+    titleLabel.setFont (juce::Font (28.0f, juce::Font::bold));
     titleLabel.setColour (juce::Label::textColourId, juce::Colour (TurboLookAndFeel::gold));
     addAndMakeVisible (titleLabel);
 
-    betaBadge.setText ("BETA", juce::dontSendNotification);
-    betaBadge.setFont (juce::Font (9.0f, juce::Font::bold));
-    betaBadge.setColour (juce::Label::textColourId, juce::Colour (TurboLookAndFeel::gold));
-    addAndMakeVisible (betaBadge);
+    subtitleLabel.setText ("GarageBand, made very easy.", juce::dontSendNotification);
+    subtitleLabel.setFont (juce::Font (13.0f, juce::Font::bold));
+    subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (TurboLookAndFeel::textSecondary));
+    addAndMakeVisible (subtitleLabel);
 
-    keyDisplayLabel.setText ("Key of " + processor.getCurrentKey(), juce::dontSendNotification);
-    keyDisplayLabel.setFont (juce::Font (14.0f, juce::Font::bold));
-    keyDisplayLabel.setColour (juce::Label::textColourId, juce::Colour (TurboLookAndFeel::textPrimary));
-    keyDisplayLabel.setJustificationType (juce::Justification::centred);
-    addAndMakeVisible (keyDisplayLabel);
+    quickStartLabel.setText ("1. Pick a key   2. Pick a sound   3. Tap holes or press 1-0", juce::dontSendNotification);
+    quickStartLabel.setFont (juce::Font (12.0f));
+    quickStartLabel.setColour (juce::Label::textColourId, juce::Colour (TurboLookAndFeel::textDim));
+    addAndMakeVisible (quickStartLabel);
 
-    instrumentDisplayLabel.setText (instrumentName (processor.getCurrentInstrument()), juce::dontSendNotification);
-    instrumentDisplayLabel.setFont (juce::Font (11.0f));
-    instrumentDisplayLabel.setColour (juce::Label::textColourId, juce::Colour (TurboLookAndFeel::textSecondary));
-    instrumentDisplayLabel.setJustificationType (juce::Justification::centred);
-    addAndMakeVisible (instrumentDisplayLabel);
+    statusLabel.setFont (juce::Font (12.0f));
+    statusLabel.setJustificationType (juce::Justification::centredLeft);
+    statusLabel.setColour (juce::Label::textColourId, juce::Colour (TurboLookAndFeel::textSecondary));
+    addAndMakeVisible (statusLabel);
 
-    // ── Main Components ──
-    addAndMakeVisible (harmonicaView);
-    addAndMakeVisible (circleOfFifths);
-    addAndMakeVisible (instrumentPanel);
-    addAndMakeVisible (effectsPanel);
-
-    // ── Footer ──
-    footerLabel.setText ("Turbo Tuning v0.1.0 Beta  |  Keys 1-0 = Holes  |  Shift = Draw  |  Space = Toggle",
-                         juce::dontSendNotification);
-    footerLabel.setFont (juce::Font (10.0f));
-    footerLabel.setColour (juce::Label::textColourId, juce::Colour (TurboLookAndFeel::textDim));
-    footerLabel.setJustificationType (juce::Justification::centred);
-    addAndMakeVisible (footerLabel);
-
-    // ── Callbacks ──
     harmonicaView.onHoleEvent = [this] (int hole, bool isBlow, bool noteOn)
     {
         if (noteOn)
         {
             processor.playHole (hole, isBlow);
-            int midi = MusicTheory::getNote (hole, isBlow, processor.getCurrentKey());
-            harmonicaView.setCurrentNote (MusicTheory::midiToNoteName (midi));
+            const auto midiNote = MusicTheory::getNote (hole, isBlow, processor.getCurrentKey());
+            harmonicaView.setCurrentNote (MusicTheory::midiToNoteName (midiNote));
+            setStatusText ("Playing " + MusicTheory::midiToNoteName (midiNote));
         }
         else
         {
             processor.stopHole (hole, isBlow);
-            harmonicaView.setCurrentNote ("");
+            harmonicaView.setCurrentNote ({});
+            setStatusText ("Ready");
         }
+
+        harmonicaView.setActiveHole (hole, isBlow, noteOn);
     };
+    addAndMakeVisible (harmonicaView);
 
     circleOfFifths.onKeySelected = [this] (const juce::String& key)
     {
         processor.setKey (key);
         harmonicaView.setCurrentKey (key);
-        keyDisplayLabel.setText ("Key of " + key, juce::dontSendNotification);
+        setStatusText ("Key: " + key);
     };
+    addAndMakeVisible (circleOfFifths);
 
-    instrumentPanel.onInstrumentSelected = [this] (InstrumentType inst)
+    instrumentPanel.onInstrumentSelected = [this] (InstrumentType instrument)
     {
-        processor.setInstrument (inst);
-        instrumentDisplayLabel.setText (instrumentName (inst), juce::dontSendNotification);
+        processor.setInstrument (instrument);
+        setStatusText ("Sound: " + instrumentName (instrument));
     };
+    addAndMakeVisible (instrumentPanel);
+
+    addAndMakeVisible (effectsPanel);
+
+    refreshFromProcessor();
+    setStatusText ("Ready");
 }
 
 TurboTuningEditor::~TurboTuningEditor()
@@ -83,71 +79,96 @@ TurboTuningEditor::~TurboTuningEditor()
     setLookAndFeel (nullptr);
 }
 
+juce::Image TurboTuningEditor::loadLogo() const
+{
+    const auto exeFile = juce::File::getSpecialLocation (juce::File::currentExecutableFile);
+    const juce::File candidates[] = {
+        exeFile.getSiblingFile ("logo.png"),
+        exeFile.getParentDirectory().getSiblingFile ("demo").getChildFile ("logo.png"),
+        exeFile.getParentDirectory().getParentDirectory().getSiblingFile ("demo").getChildFile ("logo.png")
+    };
+
+    for (const auto& file : candidates)
+        if (file.existsAsFile())
+            return juce::ImageFileFormat::loadFrom (file);
+
+    return {};
+}
+
 void TurboTuningEditor::paint (juce::Graphics& g)
 {
-    // ── Background gradient ──
-    g.fillAll (juce::Colour (TurboLookAndFeel::bgBody));
-
-    // Subtle radial gradient overlay
-    auto center = getLocalBounds().getCentre().toFloat();
-    juce::ColourGradient bg (juce::Colour (TurboLookAndFeel::bgApp).withAlpha (0.8f), center.x, center.y,
-                              juce::Colour (TurboLookAndFeel::bgBody), 0.0f, 0.0f, true);
-    g.setGradientFill (bg);
+    juce::ColourGradient background (juce::Colour (TurboLookAndFeel::bgApp), 0.0f, 0.0f,
+                                     juce::Colour (TurboLookAndFeel::bgBody), 0.0f, (float) getHeight(), false);
+    g.setGradientFill (background);
     g.fillAll();
 
-    // ── Header background ──
-    auto headerRect = juce::Rectangle<float> (0, 0, (float)getWidth(), 52.0f);
-    g.setColour (juce::Colour (0xE6080C20));
-    g.fillRect (headerRect);
-    g.setColour (juce::Colour (TurboLookAndFeel::border));
-    g.drawLine (0, 52.0f, (float)getWidth(), 52.0f, 1.0f);
+    auto bounds = getLocalBounds().reduced (16);
+    auto hero = bounds.removeFromTop (108);
 
-    // ── Footer background ──
-    float footerY = (float)getHeight() - 30.0f;
-    g.setColour (juce::Colour (0xE6080C20));
-    g.fillRect (0.0f, footerY, (float)getWidth(), 30.0f);
+    g.setColour (juce::Colour (TurboLookAndFeel::bgPanel));
+    g.fillRoundedRectangle (hero.toFloat(), 18.0f);
     g.setColour (juce::Colour (TurboLookAndFeel::border));
-    g.drawLine (0, footerY, (float)getWidth(), footerY, 1.0f);
+    g.drawRoundedRectangle (hero.toFloat().reduced (0.5f), 18.0f, 1.0f);
+
+    if (logoImage.isValid())
+    {
+        g.drawImageWithin (logoImage, hero.getX() + 18, hero.getY() + 18, 72, 72,
+                           juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize, false);
+    }
+    else
+    {
+        g.setColour (juce::Colour (TurboLookAndFeel::gold).withAlpha (0.15f));
+        g.fillRoundedRectangle ((float) hero.getX() + 18.0f, (float) hero.getY() + 18.0f, 72.0f, 72.0f, 14.0f);
+    }
+
+    auto content = getLocalBounds().reduced (16).withTrimmedTop (124);
+    auto left = content.removeFromLeft ((content.getWidth() * 58) / 100);
+    left.removeFromRight (10);
+    auto right = content;
+
+    g.setColour (juce::Colour (TurboLookAndFeel::textDim));
+    g.setFont (juce::Font (11.0f, juce::Font::bold));
+    g.drawText ("PLAY", left.withHeight (18).translated (0, -18), juce::Justification::centredLeft);
+    g.drawText ("SETUP", right.withHeight (18).translated (0, -18), juce::Justification::centredLeft);
 }
 
 void TurboTuningEditor::resized()
 {
-    auto area = getLocalBounds();
+    auto area = getLocalBounds().reduced (16);
+    auto hero = area.removeFromTop (108);
 
-    // Header (52px)
-    auto header = area.removeFromTop (52);
-    auto headerLeft = header.removeFromLeft (200).reduced (12, 8);
-    titleLabel.setBounds (headerLeft.removeFromLeft (160));
-    betaBadge.setBounds (headerLeft);
+    auto textArea = hero.withTrimmedLeft (106).reduced (0, 16);
+    titleLabel.setBounds (textArea.removeFromTop (34));
+    subtitleLabel.setBounds (textArea.removeFromTop (20));
+    quickStartLabel.setBounds (textArea.removeFromTop (18));
 
-    auto headerCenter = header.reduced (0, 12);
-    auto centerArea = headerCenter.withSizeKeepingCentre (300, 28);
-    keyDisplayLabel.setBounds (centerArea.removeFromLeft (150));
-    instrumentDisplayLabel.setBounds (centerArea);
+    auto footer = area.removeFromBottom (28);
+    statusLabel.setBounds (footer);
 
-    // Footer (30px)
-    auto footer = area.removeFromBottom (30);
-    footerLabel.setBounds (footer);
+    auto left = area.removeFromLeft ((area.getWidth() * 58) / 100);
+    left.removeFromRight (10);
+    auto right = area;
 
-    // Main content — 2-column layout with 16px gap
-    auto main = area.reduced (12, 8);
-    int gap = 12;
-    int leftW = (int)(main.getWidth() * 0.52f);
-    int rightW = main.getWidth() - leftW - gap;
+    harmonicaView.setBounds (left.removeFromTop ((left.getHeight() * 62) / 100));
+    left.removeFromTop (10);
+    circleOfFifths.setBounds (left);
 
-    auto leftCol  = main.removeFromLeft (leftW);
-    main.removeFromLeft (gap);
-    auto rightCol = main;
+    auto instrumentHeight = juce::jmin (290, right.getHeight() / 2);
+    instrumentPanel.setBounds (right.removeFromTop (instrumentHeight));
+    right.removeFromTop (10);
+    effectsPanel.setBounds (right);
+}
 
-    // Left column: Harmonica (60%) + Circle of Fifths (40%)
-    int harmoH = (int)(leftCol.getHeight() * 0.55f);
-    harmonicaView.setBounds (leftCol.removeFromTop (harmoH).reduced (0, 4));
-    circleOfFifths.setBounds (leftCol.reduced (0, 4));
+void TurboTuningEditor::setStatusText (const juce::String& text)
+{
+    statusLabel.setText (text, juce::dontSendNotification);
+}
 
-    // Right column: Instruments (45%) + Effects (55%)
-    int instH = (int)(rightCol.getHeight() * 0.48f);
-    instrumentPanel.setBounds (rightCol.removeFromTop (instH).reduced (0, 4));
-    effectsPanel.setBounds (rightCol.reduced (0, 4));
+void TurboTuningEditor::refreshFromProcessor()
+{
+    harmonicaView.setCurrentKey (processor.getCurrentKey());
+    circleOfFifths.setSelectedKey (processor.getCurrentKey());
+    instrumentPanel.setSelectedInstrument (processor.getCurrentInstrument());
 }
 
 } // namespace TurboTuning

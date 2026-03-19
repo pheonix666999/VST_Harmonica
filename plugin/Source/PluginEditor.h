@@ -10,49 +10,33 @@
 namespace TurboTuning
 {
 
-/**
- * TurboTuningEditor — Main plugin GUI.
- *
- * Layout (matches demo):
- *   ┌──────────────────────────────────────────┐
- *   │  Header: Logo | Key Display | Vol Slider │
- *   ├────────────────────┬─────────────────────┤
- *   │  Harmonica         │  Instruments        │
- *   │  (10-hole view)    │  (category browser) │
- *   │                    │                     │
- *   │  Circle of Fifths  │  EQ + Effects       │
- *   │  (key selector)    │  + Toggles          │
- *   ├────────────────────┴─────────────────────┤
- *   │  Footer: Version info | Keyboard hints   │
- *   └──────────────────────────────────────────┘
- */
 class TurboTuningEditor : public juce::AudioProcessorEditor
 {
 public:
-    TurboTuningEditor (TurboTuningProcessor&);
+    explicit TurboTuningEditor (TurboTuningProcessor& p);
     ~TurboTuningEditor() override;
 
-    void paint (juce::Graphics&) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
 
 private:
+    juce::Image loadLogo() const;
+    void setStatusText (const juce::String& text);
+    void refreshFromProcessor();
+
     TurboTuningProcessor& processor;
-    TurboLookAndFeel turboLnF;
+    TurboLookAndFeel lookAndFeel;
+    juce::Image logoImage;
 
-    // UI Components
-    HarmonicaView   harmonicaView;
-    CircleOfFifths  circleOfFifths;
-    InstrumentPanel instrumentPanel;
-    EffectsPanel    effectsPanel;
-
-    // Header labels
     juce::Label titleLabel;
-    juce::Label keyDisplayLabel;
-    juce::Label instrumentDisplayLabel;
-    juce::Label betaBadge;
+    juce::Label subtitleLabel;
+    juce::Label quickStartLabel;
+    juce::Label statusLabel;
 
-    // Footer
-    juce::Label footerLabel;
+    HarmonicaView harmonicaView;
+    CircleOfFifths circleOfFifths;
+    InstrumentPanel instrumentPanel;
+    EffectsPanel effectsPanel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TurboTuningEditor)
 };

@@ -1,332 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Turbo Tuning - Interactive Blow-and-Draw Harmonica Synthesizer with Circle of Fifths, Multi-Instrument Support, and Auto-Tune Correction">
-    <title>Turbo Tuning — Harmonica Synthesizer (Beta)</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0d0d1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Turbo Harp" />
+  <meta name="description" content="Turbo Harp – Make music like a pro, super easy. Your pocket GarageBand." />
+  <title>Turbo Harp – Make Music Easily</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="logo.png" />
+  <link rel="icon" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
-    <!-- Init overlay -->
-    <div id="init-overlay" class="init-overlay">
-        <div class="init-content">
-            <div class="init-logo">🎵</div>
-            <h1 class="init-title">TURBO TUNING</h1>
-            <p class="init-subtitle">Harmonica Synthesizer</p>
-            <button id="btn-start" class="btn-start" aria-label="Start Audio Engine">
-                <span class="btn-start-icon">▶</span>
-                <span>Click to Start</span>
-            </button>
-            <p class="init-hint">Uses Web Audio API — requires user interaction to begin</p>
-        </div>
+<!-- ─── INSTALL BANNER ─── -->
+<div id="install-banner" class="install-banner hidden">
+  <span>📲 Add Turbo Harp to your home screen!</span>
+  <button id="install-btn">Install</button>
+  <button id="install-dismiss">✕</button>
+</div>
+
+<!-- ─── TOP BAR ─── -->
+<header class="top-bar">
+  <img src="logo.png" alt="Turbo Harp Logo" class="top-logo" />
+  <div class="top-center">
+    <span class="app-title">TURBO HARP</span>
+    <span class="app-sub">Make Music. Now.</span>
+  </div>
+  <div class="transport">
+    <button class="t-btn" id="btn-rewind" title="Rewind">⏮</button>
+    <button class="t-btn play-btn" id="btn-play" title="Play">▶</button>
+    <button class="t-btn rec-btn" id="btn-rec" title="Record">⏺</button>
+    <span class="bpm-display">
+      <span id="bpm-val">120</span><small>BPM</small>
+    </span>
+    <input type="range" id="bpm-slider" min="40" max="220" value="120" class="bpm-slider" />
+  </div>
+</header>
+
+<!-- ─── NAV TABS ─── -->
+<nav class="main-nav">
+  <button class="nav-btn active" data-tab="pads">🥁 Beat Pads</button>
+  <button class="nav-btn" data-tab="keys">🎵 Harp Keys</button>
+  <button class="nav-btn" data-tab="mixer">🎚 Mixer</button>
+  <button class="nav-btn" data-tab="effects">✨ Effects</button>
+  <button class="nav-btn" data-tab="plugins">🔌 Plugins</button>
+</nav>
+
+<!-- ─── MAIN CONTENT ─── -->
+<main class="content-area">
+
+  <!-- ══════════ BEAT PADS ══════════ -->
+  <section id="tab-pads" class="tab-section active">
+    <div class="section-header">
+      <h2>Beat Pads</h2>
+      <p class="section-hint">Tap the pads to make beats! 🔥</p>
     </div>
-
-    <!-- Main Application -->
-    <div id="app" class="app hidden">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <div class="logo-mark">🎵</div>
-                <div class="header-title">
-                    <h1>TURBO TUNING</h1>
-                    <span class="badge badge-beta">BETA</span>
-                </div>
-            </div>
-            <div class="header-center">
-                <div class="now-playing" id="now-playing">
-                    <span class="now-playing-label">Key of</span>
-                    <span class="now-playing-key" id="current-key-display">C</span>
-                    <span class="now-playing-instrument" id="current-instrument-display">Major Diatonic Harp</span>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="master-volume">
-                    <label for="master-volume">VOL</label>
-                    <input type="range" id="master-volume" min="0" max="100" value="70" class="slider slider-mini">
-                    <span id="master-volume-val" class="slider-value">70</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Left Panel: Harmonica + Circle of Fifths -->
-            <section class="panel panel-left" aria-label="Harmonica and Key Selection">
-
-                <!-- Harmonica Display -->
-                <div class="section-card harmonica-section">
-                    <div class="section-header">
-                        <h2>Major Diatonic Harp</h2>
-                        <div class="blow-draw-legend">
-                            <span class="legend-item legend-blow">↑ Blow</span>
-                            <span class="legend-item legend-draw">↓ Draw</span>
-                        </div>
-                    </div>
-
-                    <!-- Blow/Draw Toggle -->
-                    <div class="action-toggle">
-                        <button id="btn-blow" class="action-btn action-blow active" data-action="blow">
-                            <span class="action-arrow">↑</span> BLOW
-                        </button>
-                        <button id="btn-draw" class="action-btn action-draw" data-action="draw">
-                            <span class="action-arrow">↓</span> DRAW
-                        </button>
-                    </div>
-
-                    <!-- Harmonica Body -->
-                    <div class="harmonica-body">
-                        <div class="harmonica-chrome-top"></div>
-                        <div class="harmonica-holes" id="harmonica-holes">
-                            <!-- Generated by JS -->
-                        </div>
-                        <div class="harmonica-chrome-bottom"></div>
-                        <div class="harmonica-numbers">
-                            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-                            <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-                        </div>
-                    </div>
-
-                    <!-- Note Display -->
-                    <div class="note-display" id="note-display">
-                        <span class="note-display-label">NOTE</span>
-                        <span class="note-display-value" id="note-name">—</span>
-                        <span class="note-display-octave" id="note-octave"></span>
-                    </div>
-
-                    <!-- Keyboard Hints -->
-                    <div class="keyboard-hints">
-                        <span class="hint">Keys <kbd>1</kbd>–<kbd>0</kbd> = Holes</span>
-                        <span class="hint">Hold <kbd>Shift</kbd> = Draw</span>
-                    </div>
-                </div>
-
-                <!-- Circle of Fifths -->
-                <div class="section-card circle-section">
-                    <div class="section-header">
-                        <h2>Circle of Fifths</h2>
-                    </div>
-                    <div class="circle-container">
-                        <div class="circle-of-fifths" id="circle-of-fifths">
-                            <!-- 12 key buttons generated by JS -->
-                        </div>
-                        <div class="circle-center">
-                            <div class="circle-key-name" id="circle-key-name">C</div>
-                            <div class="circle-minor-name" id="circle-minor-name">Am</div>
-                        </div>
-                    </div>
-                </div>
-
-            </section>
-
-            <!-- Right Panel: Instruments + EQ + Effects -->
-            <section class="panel panel-right" aria-label="Instruments, EQ, and Effects">
-
-                <!-- Instruments -->
-                <div class="section-card instruments-section">
-                    <div class="section-header">
-                        <h2>Instruments</h2>
-                        <span class="badge badge-count" id="instrument-count">10</span>
-                    </div>
-
-                    <div class="instrument-categories">
-                        <!-- Harmonica (default) -->
-                        <div class="instrument-category">
-                            <div class="category-header">
-                                <span class="category-icon">🎵</span>
-                                <span class="category-name">Harmonica</span>
-                            </div>
-                            <div class="category-instruments">
-                                <button class="instrument-btn active" data-instrument="harmonica" id="inst-harmonica">
-                                    <span class="inst-icon">🎵</span>
-                                    <span class="inst-name">Diatonic</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Brass -->
-                        <div class="instrument-category">
-                            <div class="category-header">
-                                <span class="category-icon">🎺</span>
-                                <span class="category-name">Brass</span>
-                            </div>
-                            <div class="category-instruments">
-                                <button class="instrument-btn" data-instrument="trumpet" id="inst-trumpet">
-                                    <span class="inst-icon">🎺</span>
-                                    <span class="inst-name">Trumpet</span>
-                                </button>
-                                <button class="instrument-btn" data-instrument="tuba" id="inst-tuba">
-                                    <span class="inst-icon">📯</span>
-                                    <span class="inst-name">Tuba</span>
-                                </button>
-                                <button class="instrument-btn" data-instrument="french_horn" id="inst-french-horn">
-                                    <span class="inst-icon">📯</span>
-                                    <span class="inst-name">Fr. Horn</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Strings -->
-                        <div class="instrument-category">
-                            <div class="category-header">
-                                <span class="category-icon">🎸</span>
-                                <span class="category-name">Strings</span>
-                            </div>
-                            <div class="category-instruments">
-                                <button class="instrument-btn" data-instrument="guitar" id="inst-guitar">
-                                    <span class="inst-icon">🎸</span>
-                                    <span class="inst-name">Guitar</span>
-                                </button>
-                                <button class="instrument-btn" data-instrument="harp" id="inst-harp">
-                                    <span class="inst-icon">🪕</span>
-                                    <span class="inst-name">Harp</span>
-                                </button>
-                                <button class="instrument-btn" data-instrument="violin" id="inst-violin">
-                                    <span class="inst-icon">🎻</span>
-                                    <span class="inst-name">Violin</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Woodwinds -->
-                        <div class="instrument-category">
-                            <div class="category-header">
-                                <span class="category-icon">🪈</span>
-                                <span class="category-name">Woodwinds</span>
-                            </div>
-                            <div class="category-instruments">
-                                <button class="instrument-btn" data-instrument="flute" id="inst-flute">
-                                    <span class="inst-icon">🪈</span>
-                                    <span class="inst-name">Flute</span>
-                                </button>
-                                <button class="instrument-btn" data-instrument="clarinet" id="inst-clarinet">
-                                    <span class="inst-icon">🎶</span>
-                                    <span class="inst-name">Clarinet</span>
-                                </button>
-                                <button class="instrument-btn" data-instrument="pan_flute" id="inst-pan-flute">
-                                    <span class="inst-icon">🎍</span>
-                                    <span class="inst-name">Pan Flute</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- EQ -->
-                <div class="section-card eq-section">
-                    <div class="section-header">
-                        <h2>EQ</h2>
-                    </div>
-                    <div class="eq-controls">
-                        <div class="eq-band">
-                            <input type="range" id="eq-low" class="slider slider-vertical" min="0" max="100" value="50" orient="vertical" data-band="low">
-                            <label for="eq-low">LOW</label>
-                            <span class="eq-value" id="eq-low-val">0dB</span>
-                        </div>
-                        <div class="eq-band">
-                            <input type="range" id="eq-mid" class="slider slider-vertical" min="0" max="100" value="50" orient="vertical" data-band="mid">
-                            <label for="eq-mid">MID</label>
-                            <span class="eq-value" id="eq-mid-val">0dB</span>
-                        </div>
-                        <div class="eq-band">
-                            <input type="range" id="eq-high" class="slider slider-vertical" min="0" max="100" value="50" orient="vertical" data-band="high">
-                            <label for="eq-high">HIGH</label>
-                            <span class="eq-value" id="eq-high-val">0dB</span>
-                        </div>
-                        <div class="eq-band">
-                            <input type="range" id="eq-presence" class="slider slider-vertical" min="0" max="100" value="50" orient="vertical" data-band="presence">
-                            <label for="eq-presence">PRES</label>
-                            <span class="eq-value" id="eq-presence-val">0dB</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Effects -->
-                <div class="section-card effects-section">
-                    <div class="section-header">
-                        <h2>Effects</h2>
-                    </div>
-                    <div class="effects-controls">
-                        <div class="effect-knob-group">
-                            <div class="knob-container">
-                                <input type="range" id="fx-reverb" class="slider slider-knob" min="0" max="100" value="25" data-effect="reverb">
-                                <div class="knob-visual" id="knob-reverb">
-                                    <div class="knob-track"></div>
-                                    <div class="knob-indicator"></div>
-                                </div>
-                            </div>
-                            <label for="fx-reverb">REVERB</label>
-                            <span class="effect-value" id="fx-reverb-val">25%</span>
-                        </div>
-                        <div class="effect-knob-group">
-                            <div class="knob-container">
-                                <input type="range" id="fx-delay" class="slider slider-knob" min="0" max="100" value="0" data-effect="delay">
-                                <div class="knob-visual" id="knob-delay">
-                                    <div class="knob-track"></div>
-                                    <div class="knob-indicator"></div>
-                                </div>
-                            </div>
-                            <label for="fx-delay">DELAY</label>
-                            <span class="effect-value" id="fx-delay-val">0%</span>
-                        </div>
-                        <div class="effect-knob-group">
-                            <div class="knob-container">
-                                <input type="range" id="fx-chorus" class="slider slider-knob" min="0" max="100" value="0" data-effect="chorus">
-                                <div class="knob-visual" id="knob-chorus">
-                                    <div class="knob-track"></div>
-                                    <div class="knob-indicator"></div>
-                                </div>
-                            </div>
-                            <label for="fx-chorus">CHORUS</label>
-                            <span class="effect-value" id="fx-chorus-val">0%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Controls Bar -->
-                <div class="section-card controls-section">
-                    <div class="control-toggles">
-                        <!-- Auto-Tune -->
-                        <div class="toggle-group">
-                            <label class="toggle-label" for="toggle-autotune">
-                                <span class="toggle-icon">🎯</span>
-                                AUTO-TUNE
-                            </label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="toggle-autotune" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-
-                        <!-- Safe Mode -->
-                        <div class="toggle-group safe-mode-group">
-                            <label class="toggle-label" for="toggle-safemode">
-                                <span class="toggle-icon">🛡️</span>
-                                SAFE MODE
-                            </label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="toggle-safemode">
-                                <span class="toggle-slider toggle-slider-safe"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <span class="footer-text">Turbo Tuning v0.1.0 Beta — For Turbo-Harp / MIDI Harp Box</span>
-            <span class="footer-text">🎹 Keyboard: 1-0 = Holes | Shift = Draw | Space = Toggle</span>
-        </footer>
+    <div class="pads-grid" id="pads-grid">
+      <!-- Generated by JS -->
     </div>
+    <div class="sequencer-wrap">
+      <div class="seq-header">
+        <span class="seq-title">Step Sequencer</span>
+        <button class="pill-btn" id="seq-clear">Clear</button>
+        <button class="pill-btn green" id="seq-play">▶ Play Loop</button>
+      </div>
+      <div id="sequencer" class="sequencer"></div>
+    </div>
+  </section>
 
-    <script src="js/audio-engine.js"></script>
-    <script src="js/app.js"></script>
+  <!-- ══════════ HARP KEYS ══════════ -->
+  <section id="tab-keys" class="tab-section">
+    <div class="section-header">
+      <h2>Harp Keys</h2>
+      <p class="section-hint">Play the harmonica! Tap or use keyboard A–L 🎶</p>
+    </div>
+    <div class="key-controls">
+      <label>Key:
+        <select id="key-select" class="sel">
+          <option value="C">C Major</option>
+          <option value="D">D Major</option>
+          <option value="E">E Major</option>
+          <option value="F">F Major</option>
+          <option value="G">G Major</option>
+          <option value="A">A Major</option>
+          <option value="Bb">Bb Major</option>
+          <option value="pentatonic">C Pentatonic</option>
+          <option value="blues">C Blues</option>
+        </select>
+      </label>
+      <label>Octave:
+        <select id="octave-select" class="sel">
+          <option value="3">Low (3)</option>
+          <option value="4" selected>Mid (4)</option>
+          <option value="5">High (5)</option>
+        </select>
+      </label>
+      <label>Sound:
+        <select id="voice-select" class="sel">
+          <option value="harmonica">🎵 Harmonica</option>
+          <option value="piano">🎹 Piano</option>
+          <option value="synth">🎛 Synth</option>
+          <option value="organ">🎸 Organ</option>
+        </select>
+      </label>
+    </div>
+    <div class="harp-keys" id="harp-keys">
+      <!-- Generated by JS -->
+    </div>
+    <div class="chord-strip">
+      <span class="chord-label">Quick Chords:</span>
+      <button class="chord-btn" data-chord="I">I</button>
+      <button class="chord-btn" data-chord="IV">IV</button>
+      <button class="chord-btn" data-chord="V">V</button>
+      <button class="chord-btn" data-chord="vi">vi</button>
+    </div>
+  </section>
+
+  <!-- ══════════ MIXER ══════════ -->
+  <section id="tab-mixer" class="tab-section">
+    <div class="section-header">
+      <h2>Mixer</h2>
+      <p class="section-hint">Adjust the volume of each track 🎚</p>
+    </div>
+    <div class="mixer-tracks" id="mixer-tracks">
+      <!-- Generated by JS -->
+    </div>
+    <div class="master-section">
+      <span class="master-label">MASTER VOL</span>
+      <input type="range" id="master-vol" min="0" max="100" value="80" class="master-fader" />
+      <span id="master-vol-val">80%</span>
+    </div>
+  </section>
+
+  <!-- ══════════ EFFECTS ══════════ -->
+  <section id="tab-effects" class="tab-section">
+    <div class="section-header">
+      <h2>Effects</h2>
+      <p class="section-hint">Spice up your sound! ✨</p>
+    </div>
+    <div class="effects-grid">
+      <div class="fx-card" id="fx-reverb">
+        <div class="fx-icon">🏟</div>
+        <span class="fx-name">Reverb</span>
+        <input type="range" class="fx-knob" id="knob-reverb" min="0" max="100" value="30" />
+        <span class="fx-val" id="val-reverb">30%</span>
+        <button class="fx-toggle active" data-fx="reverb">ON</button>
+      </div>
+      <div class="fx-card" id="fx-delay">
+        <div class="fx-icon">🔁</div>
+        <span class="fx-name">Delay</span>
+        <input type="range" class="fx-knob" id="knob-delay" min="0" max="100" value="20" />
+        <span class="fx-val" id="val-delay">20%</span>
+        <button class="fx-toggle" data-fx="delay">OFF</button>
+      </div>
+      <div class="fx-card" id="fx-distortion">
+        <div class="fx-icon">🔥</div>
+        <span class="fx-name">Distortion</span>
+        <input type="range" class="fx-knob" id="knob-distortion" min="0" max="100" value="0" />
+        <span class="fx-val" id="val-distortion">0%</span>
+        <button class="fx-toggle" data-fx="distortion">OFF</button>
+      </div>
+      <div class="fx-card" id="fx-chorus">
+        <div class="fx-icon">🌊</div>
+        <span class="fx-name">Chorus</span>
+        <input type="range" class="fx-knob" id="knob-chorus" min="0" max="100" value="0" />
+        <span class="fx-val" id="val-chorus">0%</span>
+        <button class="fx-toggle" data-fx="chorus">OFF</button>
+      </div>
+      <div class="fx-card" id="fx-pitch">
+        <div class="fx-icon">🎯</div>
+        <span class="fx-name">Pitch Shift</span>
+        <input type="range" class="fx-knob" id="knob-pitch" min="-12" max="12" value="0" />
+        <span class="fx-val" id="val-pitch">0 st</span>
+        <button class="fx-toggle" data-fx="pitch">OFF</button>
+      </div>
+      <div class="fx-card" id="fx-eq">
+        <div class="fx-icon">📊</div>
+        <span class="fx-name">Auto-Tune EQ</span>
+        <input type="range" class="fx-knob" id="knob-eq" min="0" max="100" value="50" />
+        <span class="fx-val" id="val-eq">50%</span>
+        <button class="fx-toggle active" data-fx="eq">ON</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ PLUGINS ══════════ -->
+  <section id="tab-plugins" class="tab-section">
+    <div class="section-header">
+      <h2>Plugin Store</h2>
+      <p class="section-hint">Download new instruments & sounds 🔌</p>
+    </div>
+    <div class="plugin-search-bar">
+      <input type="text" id="plugin-search" class="plugin-search-input" placeholder="🔍 Search plugins..." />
+    </div>
+    <div class="plugin-categories">
+      <button class="cat-btn active" data-cat="all">All</button>
+      <button class="cat-btn" data-cat="instruments">Instruments</button>
+      <button class="cat-btn" data-cat="effects">Effects</button>
+      <button class="cat-btn" data-cat="loops">Loops</button>
+      <button class="cat-btn" data-cat="drums">Drums</button>
+    </div>
+    <div class="plugins-list" id="plugins-list">
+      <!-- Generated by JS -->
+    </div>
+  </section>
+
+</main>
+
+<!-- ─── VISUALIZER BAR ─── -->
+<div class="visualizer-bar">
+  <canvas id="visualizer" width="800" height="60"></canvas>
+</div>
+
+<!-- ─── BOTTOM STATUS ─── -->
+<footer class="status-bar">
+  <span id="status-msg">Ready to make bangers 🎵</span>
+  <span class="version-tag">Turbo Harp v1.0</span>
+</footer>
+
+<!-- ─── TOAST NOTIFICATION ─── -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/app.js"></script>
 </body>
 </html>

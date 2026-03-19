@@ -6,14 +6,26 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# ── Fetch JUCE ──────────────────────────────────────────────
-include(FetchContent)
-FetchContent_Declare(
-    juce
-    GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-    GIT_TAG        8.0.1
-)
-FetchContent_MakeAvailable(juce)
+# ── Static runtime on Windows (no VC++ Redist needed) ───────
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
+# ── JUCE Dependency ────────────────────────────────────────
+set(JUCE_SOURCE_DIR "${JUCE_SOURCE_DIR}" CACHE PATH "Path to a local JUCE source checkout")
+
+if(JUCE_SOURCE_DIR AND EXISTS "${JUCE_SOURCE_DIR}/CMakeLists.txt")
+    message(STATUS "Using local JUCE from ${JUCE_SOURCE_DIR}")
+    add_subdirectory("${JUCE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/juce")
+else()
+    include(FetchContent)
+    FetchContent_Declare(
+        juce
+        GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+        GIT_TAG        8.0.1
+    )
+    FetchContent_MakeAvailable(juce)
+endif()
 
 # ── macOS ───────────────────────────────────────────────────
 if(APPLE)
@@ -36,7 +48,7 @@ juce_add_plugin(TurboTuning
     PLUGIN_MANUFACTURER_CODE Thpr
     PLUGIN_CODE              TbTn
     FORMATS                 VST3 AU Standalone
-    PRODUCT_NAME            "Turbo Tuning"
+    PRODUCT_NAME            "Turbo Harp"
     AU_MAIN_TYPE            kAudioUnitType_MusicDevice
 )
 
@@ -68,6 +80,8 @@ target_sources(TurboTuning PRIVATE
     # UI
     Source/UI/TurboLookAndFeel.h
     Source/UI/TurboLookAndFeel.cpp
+    Source/UI/DawEditor.h
+    Source/UI/DawEditor.cpp
     Source/UI/HarmonicaView.h
     Source/UI/HarmonicaView.cpp
     Source/UI/CircleOfFifths.h
@@ -107,4 +121,11 @@ target_link_libraries(TurboTuning PRIVATE
 
 if(WIN32)
     target_compile_definitions(TurboTuning PRIVATE NOMINMAX)
+endif()
+
+if(TARGET TurboTuning_Standalone)
+    add_custom_command(TARGET TurboTuning_Standalone POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_LIST_DIR}/../demo/logo.png"
+            "$<TARGET_FILE_DIR:TurboTuning_Standalone>/logo.png")
 endif()

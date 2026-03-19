@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_DIR="$ROOT_DIR/plugin"
+CONFIG="${CONFIG:-Release}"
+WINDOWS_BATCH="$ROOT_DIR/build_ninja.bat"
+
+if [[ ! -f "$PLUGIN_DIR/CMakeLists.txt" ]]; then
+    echo "Expected plugin CMake project at: $PLUGIN_DIR" >&2
+    exit 1
+fi
+
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    if ! command -v cmd.exe >/dev/null 2>&1; then
+        echo "WSL detected, but cmd.exe is unavailable." >&2
+        echo "Run build_ninja.bat from Windows Developer PowerShell instead." >&2
+        exit 1
+    fi
+
+    echo "WSL detected. Delegating to build_ninja.bat so JUCE builds with MSVC instead of MinGW."
+    cmd.exe /c "$(wslpath -w "$WINDOWS_BATCH")"
+    exit $?
+fi
+
+echo "This script only supports the Windows MSVC Ninja build for this JUCE project."
+echo "Run build_ninja.bat from a Visual Studio Developer shell."
+exit 1
