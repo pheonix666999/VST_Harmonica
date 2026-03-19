@@ -84,6 +84,7 @@ juce::Image TurboTuningEditor::loadLogo() const
     const auto exeFile = juce::File::getSpecialLocation (juce::File::currentExecutableFile);
     const juce::File candidates[] = {
         exeFile.getSiblingFile ("logo.png"),
+        exeFile.getParentDirectory().getSiblingFile ("Resources").getChildFile ("logo.png"),
         exeFile.getParentDirectory().getSiblingFile ("demo").getChildFile ("logo.png"),
         exeFile.getParentDirectory().getParentDirectory().getSiblingFile ("demo").getChildFile ("logo.png")
     };

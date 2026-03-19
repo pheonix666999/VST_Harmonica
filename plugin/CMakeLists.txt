@@ -124,8 +124,17 @@ if(WIN32)
 endif()
 
 if(TARGET TurboTuning_Standalone)
-    add_custom_command(TARGET TurboTuning_Standalone POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_LIST_DIR}/../demo/logo.png"
-            "$<TARGET_FILE_DIR:TurboTuning_Standalone>/logo.png")
+    if(WIN32)
+        add_custom_command(TARGET TurboTuning_Standalone POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_LIST_DIR}/../demo/logo.png"
+                "$<TARGET_FILE_DIR:TurboTuning_Standalone>/logo.png")
+    elseif(APPLE)
+        add_custom_command(TARGET TurboTuning_Standalone POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                "$<TARGET_BUNDLE_CONTENT_DIR:TurboTuning_Standalone>/Resources"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_LIST_DIR}/../demo/logo.png"
+                "$<TARGET_BUNDLE_CONTENT_DIR:TurboTuning_Standalone>/Resources/logo.png")
+    endif()
 endif()
